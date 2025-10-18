@@ -9,9 +9,7 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   build: {
     sourcemap: true,
-    target: 'node18',
-    outDir: 'out/preload',
-    emptyOutDir: true,
+    // Laisser le plugin Forge gérer l'outDir (sortie attendue: .vite/preload)
     lib: {
       entry: 'src/preload/preload.ts',
       formats: ['cjs'],

@@ -9,12 +9,10 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   build: {
     sourcemap: true,
-    target: 'node18',
-    outDir: 'out/main',
-    emptyOutDir: true,
     lib: {
       entry: 'src/main/main.ts',
-      formats: ['cjs'],
+      formats: ['es'],
+      fileName: () => '[name].js',
     },
     rollupOptions: {
       external: [
@@ -22,9 +20,6 @@ export default defineConfig({
         ...builtinModules,
         ...builtinModules.map((mod) => `node:${mod}`),
       ],
-      output: {
-        entryFileNames: '[name].cjs',
-      },
     },
   },
   resolve: {

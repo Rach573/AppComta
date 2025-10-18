@@ -5,7 +5,7 @@ import {
   getComptaEntries,
   registerComptaEntry,
   deleteComptaEntry,
-} from './ComptaService';
+} from './comptaRepositories';
 
 let ipcRegistered = false;
 

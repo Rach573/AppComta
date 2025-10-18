@@ -6,15 +6,26 @@ const { VitePlugin } = require('@electron-forge/plugin-vite');
 
 /** @type {import('@electron-forge/shared-types').ForgeConfig} */
 module.exports = {
+  // Dossier de sortie des artefacts (par défaut 'out')
+  outDir: 'dist',
   packagerConfig: {
     asar: true,
+    // Options passées à electron-packager
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
-    new MakerZip({ platforms: ['darwin'] }),
-    new MakerDeb({}),
-    new MakerRpm({}),
+    {
+      name: '@electron-forge/maker-zip',
+      platforms: ['win32', 'darwin'],
+    },
+    {
+      name: '@electron-forge/maker-deb',
+      config: {},
+    },
+    {
+      name: '@electron-forge/maker-rpm',
+      config: {},
+    },
   ],
   plugins: [
     new VitePlugin({

@@ -11,8 +11,7 @@ export default defineConfig({
   base: './',
   plugins: [vue()],
   build: {
-    outDir: path.resolve(__dirname, 'out', 'renderer'),
-    emptyOutDir: true,
+    // Laisser le plugin Forge générer dans .vite/renderer en mode package
   },
   resolve: {
     alias: {
