@@ -1,16 +1,11 @@
+
+import { registerRepositories } from './RepositoryAll';
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { registerRepositories } from './RepositoryAll';
-import { ipcMain } from 'electron';
-import { trouverEcriture } from './services/accountingService';
 
-ipcMain.handle('ajouter-ecriture', (event, description: string, montant: number) => {
-  const ecriture = trouverEcriture(description, montant);
-  if (!ecriture) throw new Error('Opération inconnue ou non supportée');
-  return ecriture;
-});
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +40,7 @@ const createWindow = async () => {
     );
   }
 };
+
 
 app.whenReady().then(() => {
   registerRepositories();

@@ -1,4 +1,4 @@
-import { registerComptaIpcHandlers } from './repository/registerComptaRepo';
+import { registerComptaIpcHandlers } from './repository/ComptaIpc';
 
 let repositoriesRegistered = false;
 

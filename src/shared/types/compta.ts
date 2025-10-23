@@ -1,15 +1,47 @@
+// Types pour le compte de résultat
+export interface IncomeStatementItem {
+  label: string;
+  amount: number;
+}
+
+export interface IncomeStatementSummary {
+  charges: IncomeStatementItem[];
+  produits: IncomeStatementItem[];
+  resultatNet: number;
+}
+
+// Types pour le cashflow
+export interface CashflowSummary {
+  exploitation: number;
+  investissement: number;
+  financement: number;
+  net: number;
+}
+
 export type ComptaCategory =
-  | 'frais_etablissement'
-  | 'actif_immobilise_brevet'
-  | 'actif_immobilise_equipement'
-  | 'actifs_circulants_creances'
-  | 'actifs_circulants_stock'
-  | 'actifs_circulants_cash'
-  | 'capitaux_propres_capital_initial'
-  | 'capitaux_propres_benefices_reportes'
-  | 'dette_long_terme_financiere'
-  | 'dette_court_terme_financiere'
-  | 'dette_court_terme_commerciale';
+  | 'vente'
+  | 'revenu_service'
+  | 'frais_immatriculation'
+  | 'loyer'
+  | 'electricite'
+  | 'interets'
+  | 'salaires'
+  | 'achat_matieres'
+  | 'achat_machine'
+  | 'achat_logiciel'
+  | 'achat_camion'
+  | 'apport_capital'
+  | 'emprunt_bancaire'
+  | 'credit_caisse'
+  | 'benefice_reporte'
+  // Actif circulant / Passif court terme
+  | 'stock'
+  | 'creances_clients'
+  | 'dettes_fournisseurs'
+  // Mouvements et opérations spécifiques (pour auto-classification / cashflow)
+  | 'encaissement_client'
+  | 'paiement_fournisseurs'
+  | 'remboursement_emprunt';
 
 export type ComptaGroup = 'actif' | 'passif';
 
@@ -48,29 +80,67 @@ export interface RegisterComptaPayload {
 }
 
 export const COMPTA_CATEGORY_LABELS: Record<ComptaCategory, string> = {
-  frais_etablissement: "Frais d'etablissement",
-  actif_immobilise_brevet: 'Actifs immobilises - Brevet',
-  actif_immobilise_equipement: 'Actifs immobilises - Equipement',
-  actifs_circulants_creances: 'Actifs circulants - Creances',
-  actifs_circulants_stock: 'Actifs circulants - Stock',
-  actifs_circulants_cash: 'Actifs circulants - Cash',
-  capitaux_propres_capital_initial: 'Fonds propres - Capital initial',
-  capitaux_propres_benefices_reportes: 'Fonds propres - Benefices reportes',
-  dette_long_terme_financiere: 'Dettes > 1 an - Dettes financieres',
-  dette_court_terme_financiere: 'Dettes < 1 an - Dettes financieres',
-  dette_court_terme_commerciale: 'Dettes < 1 an - Dettes commerciales',
+  // PRODUITS
+  vente: 'Vente de marchandises',
+  revenu_service: 'Revenu de services',
+  
+  // CHARGES
+  frais_immatriculation: "Frais d'immatriculation",
+  loyer: 'Loyer',
+  electricite: 'Électricité',
+  interets: 'Intérêts bancaires',
+  salaires: 'Salaires',
+  achat_matieres: 'Achat de matières premières',
+  
+  // INVESTISSEMENT
+  achat_machine: 'Achat de machine',
+  achat_logiciel: 'Achat de logiciel',
+  achat_camion: 'Achat de camion',
+  
+  // FINANCEMENT
+  apport_capital: 'Apport en capital',
+  emprunt_bancaire: 'Emprunt bancaire',
+  credit_caisse: 'Crédit caisse',
+  benefice_reporte: 'Bénéfice reporté',
+  // BILAN CIRCULANT
+  stock: 'Stocks',
+  creances_clients: 'Créances clients',
+  dettes_fournisseurs: 'Dettes fournisseurs',
+  // Mouvements (utilisés par flux/cas spécifiques)
+  encaissement_client: 'Encaissement client',
+  paiement_fournisseurs: 'Paiement fournisseurs',
+  remboursement_emprunt: 'Remboursement emprunt',
 };
 
 export const COMPTA_CATEGORY_GROUP: Record<ComptaCategory, { group: ComptaGroup; section: string }> = {
-  frais_etablissement: { group: 'actif', section: 'Actif' },
-  actif_immobilise_brevet: { group: 'actif', section: 'Actifs immobilises' },
-  actif_immobilise_equipement: { group: 'actif', section: 'Actifs immobilises' },
-  actifs_circulants_creances: { group: 'actif', section: 'Actifs circulants' },
-  actifs_circulants_stock: { group: 'actif', section: 'Actifs circulants' },
-  actifs_circulants_cash: { group: 'actif', section: 'Actifs circulants' },
-  capitaux_propres_capital_initial: { group: 'passif', section: 'Fonds propres' },
-  capitaux_propres_benefices_reportes: { group: 'passif', section: 'Fonds propres' },
-  dette_long_terme_financiere: { group: 'passif', section: 'Dettes > 1 an' },
-  dette_court_terme_financiere: { group: 'passif', section: 'Dettes < 1 an' },
-  dette_court_terme_commerciale: { group: 'passif', section: 'Dettes < 1 an' },
+  // PRODUITS - Actif (augmentation de trésorerie)
+  vente: { group: 'actif', section: 'Produits' },
+  revenu_service: { group: 'actif', section: 'Produits' },
+  
+  // CHARGES - Passif (sortie de trésorerie)
+  frais_immatriculation: { group: 'passif', section: 'Charges' },
+  loyer: { group: 'passif', section: 'Charges' },
+  electricite: { group: 'passif', section: 'Charges' },
+  interets: { group: 'passif', section: 'Charges' },
+  salaires: { group: 'passif', section: 'Charges' },
+  achat_matieres: { group: 'passif', section: 'Charges' },
+  
+  // INVESTISSEMENT - Actif (acquisition d'actifs)
+  achat_machine: { group: 'actif', section: 'Investissements' },
+  achat_logiciel: { group: 'actif', section: 'Investissements' },
+  achat_camion: { group: 'actif', section: 'Investissements' },
+  
+  // FINANCEMENT - Passif (sources de financement)
+  apport_capital: { group: 'passif', section: 'Financement' },
+  emprunt_bancaire: { group: 'passif', section: 'Financement' },
+  credit_caisse: { group: 'passif', section: 'Financement' },
+  benefice_reporte: { group: 'passif', section: 'Capitaux propres' },
+  // ACTIF CIRCULANT / PASSIF COURT TERME
+  stock: { group: 'actif', section: 'Actif circulant' },
+  creances_clients: { group: 'actif', section: 'Actif circulant' },
+  dettes_fournisseurs: { group: 'passif', section: 'Dettes fournisseurs' },
+  // MOUVEMENTS (non destinés à l'affichage du bilan, utilisés pour flux)
+  encaissement_client: { group: 'actif', section: 'Mouvements' },
+  paiement_fournisseurs: { group: 'passif', section: 'Mouvements' },
+  remboursement_emprunt: { group: 'passif', section: 'Mouvements' },
 };

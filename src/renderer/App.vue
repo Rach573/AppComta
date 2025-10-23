@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
+import SaisieEcriture from './components/SaisieEcriture.vue';
+import SectionTable from './components/SectionTable.vue';
 import type {
   BalanceSheetSummary,
   ComptaCategory,
   ComptaEntry,
+  IncomeStatementSummary,
+  CashflowSummary,
 } from '@shared/types/compta';
 import {
   COMPTA_CATEGORY_GROUP,
@@ -14,7 +18,88 @@ const entriesLoading = ref(false);
 const savingEntry = ref(false);
 const balanceLoading = ref(false);
 const deletingEntryId = ref<string | null>(null);
-const currentView = ref<'entries' | 'balance'>('entries');
+const currentView = ref<'entries' | 'balance' | 'income' | 'cashflow'>('entries');
+
+// Données pour compte de résultat et cashflow
+const incomeStatement = ref<IncomeStatementSummary | null>(null);
+const incomeLoading = ref(false);
+const incomeError = ref<string | null>(null);
+const cashflow = ref<CashflowSummary | null>(null);
+const cashflowLoading = ref(false);
+const cashflowError = ref<string | null>(null);
+
+// Adaptation Cashflow -> SectionTable: construire des listes à partir des totaux numériques
+// Affichage détaillé de tous les flux par catégorie (pour rendre tout visible)
+const cashflowItemsExploitation = computed(() => {
+  if (!cashflow.value) return [];
+  return [
+    { label: "Encaissements clients", amount: cashflow.value.encaissementsClients ?? cashflow.value.exploitation },
+    { label: "Paiements fournisseurs", amount: cashflow.value.paiementsFournisseurs ?? 0 },
+    { label: "Paiements charges", amount: cashflow.value.paiementsCharges ?? 0 },
+    { label: "Intérêts", amount: cashflow.value.interets ?? 0 },
+    { label: "Total exploitation", amount: cashflow.value.exploitation },
+  ];
+});
+const cashflowItemsFinInv = computed(() => {
+  if (!cashflow.value) return [];
+  return [
+    { label: "Investissements payés", amount: cashflow.value.investissement },
+    { label: "Apports en capital", amount: cashflow.value.apports ?? 0 },
+    { label: "Emprunts reçus", amount: cashflow.value.emprunts ?? 0 },
+    { label: "Remboursements emprunts", amount: cashflow.value.remboursements ?? 0 },
+    { label: "Total financement", amount: cashflow.value.financement },
+  ];
+});
+
+// Générer toutes les lignes (même à zéro) pour le compte de résultat
+const CHARGE_CATEGORIES = [
+  'frais_immatriculation',
+  'loyer',
+  'electricite',
+  'interets',
+  'salaires',
+  'achat_matieres',
+];
+const PRODUIT_CATEGORIES = [
+  'vente',
+  'revenu_service',
+];
+const allCharges = computed(() =>
+  CHARGE_CATEGORIES.map(cat => {
+    const found = incomeStatement.value?.charges.find(i => i.label === COMPTA_CATEGORY_LABELS[cat as ComptaCategory]);
+    return { label: COMPTA_CATEGORY_LABELS[cat as ComptaCategory], amount: found ? found.amount : 0 };
+  })
+);
+const allProduits = computed(() =>
+  PRODUIT_CATEGORIES.map(cat => {
+    const found = incomeStatement.value?.produits.find(i => i.label === COMPTA_CATEGORY_LABELS[cat as ComptaCategory]);
+    return { label: COMPTA_CATEGORY_LABELS[cat as ComptaCategory], amount: found ? found.amount : 0 };
+  })
+);
+
+const fetchIncomeStatement = async () => {
+  incomeLoading.value = true;
+  incomeError.value = null;
+  try {
+    incomeStatement.value = await window.electronService.compta.income();
+  } catch (error) {
+    incomeError.value = 'Erreur lors du chargement du compte de résultat.';
+  } finally {
+    incomeLoading.value = false;
+  }
+};
+
+const fetchCashflow = async () => {
+  cashflowLoading.value = true;
+  cashflowError.value = null;
+  try {
+    cashflow.value = await window.electronService.compta.cashflow();
+  } catch (error) {
+    cashflowError.value = 'Erreur lors du chargement du cashflow.';
+  } finally {
+    cashflowLoading.value = false;
+  }
+};
 
 const entries = ref<ComptaEntry[]>([]);
 const balanceSheet = ref<BalanceSheetSummary | null>(null);
@@ -27,10 +112,19 @@ const form = reactive({
 
 const entryError = ref<string | null>(null);
 const balanceError = ref<string | null>(null);
+const historiqueExpanded = ref(true);
 
 const dashboardBalance = computed(() =>
   entries.value.reduce((total, { amount }) => total + amount, 0),
 );
+
+const toggleHistorique = () => {
+  historiqueExpanded.value = !historiqueExpanded.value;
+};
+
+const updateLabel = () => {
+  form.label = COMPTA_CATEGORY_LABELS[form.category];
+};
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('fr-BE', {
@@ -90,7 +184,7 @@ const isDeleting = (id: string) => deletingEntryId.value === id;
 const resetForm = () => {
   form.label = '';
   form.amount = 0;
-  form.category = 'frais_etablissement';
+  form.category = 'vente';
 };
 
 const fetchEntries = async () => {
@@ -130,6 +224,8 @@ const submit = async () => {
     });
     await fetchEntries();
     await generateBalance();
+    await fetchIncomeStatement();
+    await fetchCashflow();
     resetForm();
   } catch (error) {
     console.error(error);
@@ -172,10 +268,50 @@ const generateBalance = async () => {
   }
 };
 
-const goTo = async (view: 'entries' | 'balance') => {
+const cloturerExercice = async () => {
+  try {
+    const res = await window.electronService.compta.cloture();
+    await generateBalance();
+    return res;
+  } catch (e) {
+    console.error('Erreur clôture', e);
+  }
+};
+
+const testLogique = async () => {
+  console.log('🧪 Lancement du test de la logique comptable...');
+  try {
+    const result = await window.electronService.compta.test();
+    console.log('✅ Test terminé avec succès');
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur lors du test :', error);
+  }
+};
+
+const testEcoBois = async () => {
+  console.log('🌳 Lancement du test ÉcoBois...');
+  try {
+    const result = await window.electronService.compta.testEcoBois();
+    console.log('✅ Test ÉcoBois terminé avec succès');
+    await fetchEntries();
+    await generateBalance();
+    await fetchIncomeStatement();
+    await fetchCashflow();
+    return result;
+  } catch (error) {
+    console.error('❌ Erreur lors du test ÉcoBois :', error);
+  }
+};
+
+const goTo = async (view: 'entries' | 'balance' | 'income' | 'cashflow') => {
   currentView.value = view;
   if (view === 'balance') {
     await generateBalance();
+  } else if (view === 'income') {
+    await fetchIncomeStatement();
+  } else if (view === 'cashflow') {
+    await fetchCashflow();
   }
 };
 
@@ -202,21 +338,12 @@ onMounted(() => {
         </div>
       </header>
 
+
       <nav class="tabs">
-        <button
-          type="button"
-          :class="{ active: currentView === 'entries' }"
-          @click="goTo('entries')"
-        >
-          Ecritures
-        </button>
-        <button
-          type="button"
-          :class="{ active: currentView === 'balance' }"
-          @click="goTo('balance')"
-        >
-          Bilan
-        </button>
+        <button type="button" :class="{ active: currentView === 'entries' }" @click="goTo('entries')">Ecritures</button>
+        <button type="button" :class="{ active: currentView === 'balance' }" @click="goTo('balance')">Bilan</button>
+        <button type="button" :class="{ active: currentView === 'income' }" @click="goTo('income')">Compte de résultat</button>
+        <button type="button" :class="{ active: currentView === 'cashflow' }" @click="goTo('cashflow')">Cashflow</button>
       </nav>
 
       <section v-if="currentView === 'entries'" class="entries-view">
@@ -224,16 +351,8 @@ onMounted(() => {
           <h2>Nouvelle ecriture</h2>
           <form @submit.prevent="submit">
             <label>
-              Libelle
-              <input v-model="form.label" placeholder="Ex. Capital initial" />
-            </label>
-            <label>
-              Montant
-              <input v-model.number="form.amount" type="number" step="0.01" />
-            </label>
-            <label>
-              Categorie
-              <select v-model="form.category">
+              Type d'écriture
+              <select v-model="form.category" @change="updateLabel">
                 <optgroup
                   v-for="group in categoryGroups"
                   :key="group.key"
@@ -249,6 +368,10 @@ onMounted(() => {
                 </optgroup>
               </select>
             </label>
+            <label>
+              Montant (EUR)
+              <input v-model.number="form.amount" type="number" step="0.01" placeholder="0.00" />
+            </label>
             <button type="submit" :disabled="savingEntry">
               {{ savingEntry ? 'Enregistrement...' : 'Enregistrer' }}
             </button>
@@ -256,46 +379,74 @@ onMounted(() => {
           <p v-if="entryError" class="error">{{ entryError }}</p>
         </section>
 
+        <section class="card form-card">
+          <div class="section-header">
+            <div>
+              <h2>Saisie automatique (par description)</h2>
+              <p class="subtitle">Tapez une description (ex: "achat machine") et un montant – la catégorie est déduite automatiquement.</p>
+            </div>
+          </div>
+          <SaisieEcriture @added="() => { void fetchEntries(); void generateBalance(); void fetchIncomeStatement(); void fetchCashflow(); }" />
+        </section>
+
         <section class="card entries">
-          <h2>Historique des ecritures</h2>
-          <p v-if="entriesLoading">Chargement...</p>
-          <p v-else-if="entries.length === 0">Aucune ecriture pour le moment.</p>
-          <ul v-else>
-            <li v-for="entry in entries" :key="entry.id">
-              <div class="entry-main">
-                <span class="label">{{ entry.label }}</span>
-                <span class="category">{{ categoryLabel(entry.category) }}</span>
-              </div>
-              <div class="entry-meta">
-                <span class="amount" :class="{ negative: entry.amount < 0 }">
-                  {{ formatCurrency(entry.amount) }}
-                </span>
-                <span class="date">
-                  {{ new Date(entry.createdAt).toLocaleString('fr-BE') }}
-                </span>
-              </div>
-              <button
-                type="button"
-                class="ghost"
-                :disabled="isDeleting(entry.id)"
-                @click="deleteEntry(entry.id)"
-              >
-                {{ isDeleting(entry.id) ? 'Suppression...' : 'Supprimer' }}
-              </button>
-            </li>
-          </ul>
+          <div class="entries-header" @click="toggleHistorique">
+            <h2>Historique des ecritures ({{ entries.length }})</h2>
+            <span class="toggle-icon">{{ historiqueExpanded ? '▼' : '▶' }}</span>
+          </div>
+          <div v-show="historiqueExpanded" class="entries-content">
+            <p v-if="entriesLoading">Chargement...</p>
+            <p v-else-if="entries.length === 0">Aucune ecriture pour le moment.</p>
+            <div v-else class="entries-scroll">
+              <ul>
+                <li v-for="entry in entries" :key="entry.id">
+                  <div class="entry-main">
+                    <span class="label">{{ entry.label }}</span>
+                    <span class="category">{{ categoryLabel(entry.category) }}</span>
+                  </div>
+                  <div class="entry-meta">
+                    <span class="amount" :class="{ negative: entry.amount < 0 }">
+                      {{ formatCurrency(entry.amount) }}
+                    </span>
+                    <span class="date">
+                      {{ new Date(entry.createdAt).toLocaleString('fr-BE') }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="ghost"
+                    :disabled="isDeleting(entry.id)"
+                    @click="deleteEntry(entry.id)"
+                  >
+                    {{ isDeleting(entry.id) ? 'Suppression...' : 'Supprimer' }}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
         </section>
       </section>
 
-      <section v-else class="card balance-card">
+      <section v-else-if="currentView === 'balance'" class="card balance-card">
         <div class="section-header">
           <div>
             <h2>Bilan comptable</h2>
             <p class="subtitle">Visualisation inspiree de la presentation classique Actif / Passif</p>
           </div>
-          <button type="button" @click="generateBalance" :disabled="balanceLoading">
-            {{ balanceLoading ? 'Generation...' : 'Actualiser le bilan' }}
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" @click="testLogique" class="btn-test" title="Tester la logique comptable (voir console)">
+              🧪 Test
+            </button>
+            <button type="button" @click="testEcoBois" class="btn-test" title="Tester l'exercice ÉcoBois (voir console)" style="background: #1a936f;">
+              🌳 Test ÉcoBois
+            </button>
+            <button type="button" @click="generateBalance" :disabled="balanceLoading">
+              {{ balanceLoading ? 'Generation...' : 'Actualiser le bilan' }}
+            </button>
+            <button type="button" @click="cloturerExercice" title="Clôturer l'exercice et reporter le résultat">
+              Clôturer l'exercice
+            </button>
+          </div>
         </div>
         <p v-if="balanceLoading">Generation...</p>
         <p v-if="balanceError" class="error">{{ balanceError }}</p>
@@ -349,6 +500,64 @@ onMounted(() => {
           </div>
         </div>
       </section>
+
+      <section v-else-if="currentView === 'income'" class="card balance-card">
+        <div class="section-header">
+          <div>
+            <h2>Compte de résultat</h2>
+            <p class="subtitle">Présentation Charges / Produits avec toutes les lignes, même à zéro</p>
+          </div>
+        </div>
+        <div v-if="incomeLoading">Chargement...</div>
+        <div v-else-if="incomeError" class="error">{{ incomeError }}</div>
+        <div v-else-if="incomeStatement" class="balance-grid">
+          <div class="balance-column">
+            <SectionTable
+              title="Charges"
+              :items="allCharges"
+              :total="incomeStatement.charges.reduce((s, i) => s + i.amount, 0)"
+            />
+          </div>
+          <div class="balance-column">
+            <SectionTable
+              title="Produits"
+              :items="allProduits"
+              :total="incomeStatement.produits.reduce((s, i) => s + i.amount, 0)"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section v-else-if="currentView === 'cashflow'" class="card balance-card">
+        <div class="section-header">
+          <div>
+            <h2>Cashflow</h2>
+            <p class="subtitle">Présentation symétrique, toutes les lignes affichées même à zéro</p>
+          </div>
+        </div>
+        <div v-if="cashflowLoading">Chargement...</div>
+        <div v-else-if="cashflowError" class="error">{{ cashflowError }}</div>
+        <div v-else-if="cashflow" class="balance-grid">
+          <div class="balance-column">
+            <SectionTable
+              title="Exploitation"
+              :items="cashflowItemsExploitation"
+              :total="cashflowItemsExploitation.reduce((s, i) => s + i.amount, 0)"
+            />
+          </div>
+          <div class="balance-column">
+            <SectionTable
+              title="Financement & Investissement"
+              :items="cashflowItemsFinInv"
+              :total="cashflowItemsFinInv.reduce((s, i) => s + i.amount, 0)"
+            />
+          </div>
+        </div>
+        <div v-if="cashflow" class="grand-total" style="margin-top:1.5rem; color:#1a936f;">
+          Variation nette de trésorerie : <strong>{{ formatCurrency(cashflow.net) }}</strong>
+        </div>
+      </section>
+
     </main>
   </div>
 </template>
@@ -525,6 +734,16 @@ button:not(:disabled):hover {
   box-shadow: 0 18px 30px rgba(79, 70, 229, 0.35);
 }
 
+.btn-test {
+  background: linear-gradient(135deg, #3BA18B, #2d8574);
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+}
+
+.btn-test:hover {
+  box-shadow: 0 12px 24px rgba(59, 161, 139, 0.35);
+}
+
 .ghost {
   background: rgba(124, 58, 237, 0.08);
   color: #7c3aed;
@@ -588,6 +807,55 @@ button:not(:disabled):hover {
 
 .entries .date {
   color: #5b5f97;
+}
+
+/* Styles pour l'historique déroulant */
+.entries-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(124, 58, 237, 0.1);
+}
+
+.entries-header:hover {
+  opacity: 0.8;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  color: #7c3aed;
+  transition: transform 0.2s ease;
+}
+
+.entries-content {
+  margin-top: 1rem;
+}
+
+.entries-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.entries-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.entries-scroll::-webkit-scrollbar-track {
+  background: rgba(124, 58, 237, 0.05);
+  border-radius: 10px;
+}
+
+.entries-scroll::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 10px;
+}
+
+.entries-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
 }
 
 .balance-card {

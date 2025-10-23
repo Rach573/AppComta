@@ -1,69 +1,65 @@
+/**
+ * 📘 COMPTASTORE - Gestion des écritures comptables et génération des états financiers
+ * 
+ * Ce fichier implémente la logique métier pour :
+ * 1. Le BILAN (avec report automatique du résultat net dans les capitaux propres)
+ * 2. Le COMPTE DE RÉSULTAT (produits - charges)
+ * 
+ * 📖 Documentation complète : voir LOGIQUE_METIER.md
+ * 
+ * ⚖️ Équation fondamentale garantie : ACTIF = PASSIF
+ */
+
+import type { IncomeStatementSummary, IncomeStatementItem, ComptaCategory } from '@shared/types/compta';
+import { computeCashflow } from './CashflowService';
+
+// Mapping des catégories en type "charge" ou "produit" pour le compte de résultat
+const CHARGE_CATEGORIES: ComptaCategory[] = [
+  'frais_immatriculation',
+  'loyer',
+  'electricite',
+  'interets',
+  'salaires',
+  'achat_matieres',
+];
+
+const PRODUIT_CATEGORIES: ComptaCategory[] = [
+  'vente',
+  'revenu_service',
+];
+
+export async function computeIncomeStatement(): Promise<IncomeStatementSummary> {
+  const charges: IncomeStatementItem[] = [];
+  const produits: IncomeStatementItem[] = [];
+  let totalCharges = 0;
+  let totalProduits = 0;
+
+  for (const entry of comptaStore) {
+    if (CHARGE_CATEGORIES.includes(entry.category)) {
+      charges.push({ label: COMPTA_CATEGORY_LABELS[entry.category], amount: entry.amount });
+      totalCharges += entry.amount;
+    } else if (PRODUIT_CATEGORIES.includes(entry.category)) {
+      produits.push({ label: COMPTA_CATEGORY_LABELS[entry.category], amount: entry.amount });
+      totalProduits += entry.amount;
+    }
+  }
+
+  return {
+    charges,
+    produits,
+    resultatNet: totalProduits - totalCharges,
+  };
+}
 import { randomUUID } from 'node:crypto';
 import type {
   BalanceSheetSummary,
   ComptaEntry,
   RegisterComptaPayload,
 } from '@shared/types/compta';
-import { COMPTA_CATEGORY_GROUP, COMPTA_CATEGORY_LABELS } from '@shared/types/compta';
+import { COMPTA_CATEGORY_LABELS } from '@shared/types/compta';
 
-const comptaStore: ComptaEntry[] = [
-  {
-    id: randomUUID(),
-    label: 'Achat materiel',
-    amount: 5000,
-    createdAt: new Date().toISOString(),
-    category: 'frais_etablissement',
-  },
-  {
-    id: randomUUID(),
-    label: 'Facture client',
-    amount: 70000,
-    createdAt: new Date().toISOString(),
-    category: 'actif_immobilise_equipement',
-  },
-  {
-    id: randomUUID(),
-    label: 'Capital initial',
-    amount: 60000,
-    createdAt: new Date().toISOString(),
-    category: 'capitaux_propres_capital_initial',
-  },
-  {
-    id: randomUUID(),
-    label: 'Benefice reporte',
-    amount: -2700,
-    createdAt: new Date().toISOString(),
-    category: 'capitaux_propres_benefices_reportes',
-  },
-  {
-    id: randomUUID(),
-    label: 'Stock marchandises',
-    amount: 15000,
-    createdAt: new Date().toISOString(),
-    category: 'actifs_circulants_stock',
-  },
-  {
-    id: randomUUID(),
-    label: 'Tresorerie',
-    amount: 7300,
-    createdAt: new Date().toISOString(),
-    category: 'actifs_circulants_cash',
-  },
-  {
-    id: randomUUID(),
-    label: 'Creances clients',
-    amount: 0,
-    createdAt: new Date().toISOString(),
-    category: 'actifs_circulants_creances',
-  },
-  {
-    id: randomUUID(),
-    label: 'Dettes financieres long terme',
-    amount: 50000,
-    createdAt: new Date().toISOString(),
-    category: 'dette_long_terme_financiere',
-  },
-];
+// Store vide au démarrage - les données seront ajoutées via l'UI ou les tests
+const comptaStore: ComptaEntry[] = [];
 
 export async function listComptaEntries(): Promise<ComptaEntry[]> {
   return [...comptaStore].sort(
@@ -93,63 +89,148 @@ export async function removeComptaEntry(id: string): Promise<boolean> {
 }
 
 export async function computeBalanceSheet(): Promise<BalanceSheetSummary> {
-  const sectionsMap: Record<
-    'actif' | 'passif',
-    Map<
-      string,
-      {
-        label: string;
-        items: Map<string, { category: ComptaEntry['category']; amount: number }>;
-        total: number;
-      }
-    >
-  > = {
-    actif: new Map(),
-    passif: new Map(),
-  };
+  // Catégories pertinentes pour le BILAN uniquement
+  const INVESTISSEMENT_CATEGORIES: ComptaCategory[] = [
+    'achat_machine',
+    'achat_logiciel',
+    'achat_camion',
+  ];
+  const DETTE_CATEGORIES: ComptaCategory[] = [
+    'emprunt_bancaire',
+    'credit_caisse',
+    'dettes_fournisseurs',
+  ];
+  const CAPITAUX_PROPRES_CATEGORIES: ComptaCategory[] = [
+    'apport_capital',
+  ];
 
-  const getSection = (group: 'actif' | 'passif', label: string) => {
-    let section = sectionsMap[group].get(label);
-    if (!section) {
-      section = { label, items: new Map(), total: 0 };
-      sectionsMap[group].set(label, section);
-    }
-    return section;
-  };
+  // 1) Actif
+  // 1.a) Actif immobilisé (Investissements)
+  const actifImmobiliseItems: { category: ComptaEntry['category']; amount: number }[] = [];
+  for (const cat of INVESTISSEMENT_CATEGORIES) {
+    const total = comptaStore
+      .filter((e) => e.category === cat)
+      .reduce((s, e) => s + e.amount, 0);
+    if (total !== 0) actifImmobiliseItems.push({ category: cat, amount: total });
+  }
+  const totalActifImmobilise = actifImmobiliseItems.reduce((s, i) => s + i.amount, 0);
 
-  comptaStore.forEach((entry) => {
-    const meta = COMPTA_CATEGORY_GROUP[entry.category];
-    const section = getSection(meta.group, meta.section);
-    const key = entry.category;
-    const item = section.items.get(key);
-    if (item) {
-      item.amount += entry.amount;
-    } else {
-      section.items.set(key, { category: entry.category, amount: entry.amount });
-    }
-    section.total += entry.amount;
-  });
+  // 1.b) Actif circulant (Stock, Créances)
+  const ACTIF_CIRCULANT_CATEGORIES: ComptaCategory[] = ['stock', 'creances_clients'];
+  const actifCirculantItems: { category: ComptaEntry['category']; amount: number }[] = [];
+  for (const cat of ACTIF_CIRCULANT_CATEGORIES) {
+    const total = comptaStore
+      .filter((e) => e.category === cat)
+      .reduce((s, e) => s + e.amount, 0);
+    if (total !== 0) actifCirculantItems.push({ category: cat, amount: total });
+  }
+  const totalActifCirculant = actifCirculantItems.reduce((s, i) => s + i.amount, 0);
 
-  const buildSections = (group: 'actif' | 'passif') =>
-    Array.from(sectionsMap[group].values()).map((section) => ({
-      group,
-      label: section.label,
-      total: section.total,
-      items: Array.from(section.items.values()).map((item) => ({
-        category: item.category,
-        label: COMPTA_CATEGORY_LABELS[item.category],
-        amount: item.amount,
+  // 1.c) Disponibilités (Trésorerie) = variation nette de trésorerie (cashflow net)
+  const cashflow = computeCashflow(comptaStore);
+  const tresorerie = cashflow.net; // Montant synthétique
+
+  // 2) Passif
+  // 2.a) Capitaux propres = apports + résultat de l'exercice
+  const apports = CAPITAUX_PROPRES_CATEGORIES
+    .map((cat) => comptaStore.filter((e) => e.category === cat).reduce((s, e) => s + e.amount, 0))
+    .reduce((a, b) => a + b, 0);
+  const beneficeReporte = comptaStore
+    .filter((e) => e.category === 'benefice_reporte')
+    .reduce((s, e) => s + e.amount, 0);
+  const hasCloture = comptaStore.some(
+    (e) => e.category === 'benefice_reporte' &&
+      (e.label?.toLowerCase().includes('clôture') || e.label?.toLowerCase().includes('cloture')),
+  );
+  const incomeStatement = await computeIncomeStatement();
+  const resultatNet = incomeStatement.resultatNet;
+  const resultatNetEquity = hasCloture ? 0 : resultatNet;
+
+  // 2.b) Dettes (emprunts, découverts)
+  const dettesItems: { category: ComptaEntry['category']; amount: number }[] = [];
+  for (const cat of DETTE_CATEGORIES) {
+    const total = comptaStore
+      .filter((e) => e.category === cat)
+      .reduce((s, e) => s + e.amount, 0);
+    if (total !== 0) dettesItems.push({ category: cat, amount: total });
+  }
+  const totalDettes = dettesItems.reduce((s, i) => s + i.amount, 0);
+
+  // Construction des sections du bilan
+  const assets = [
+    {
+      group: 'actif' as const,
+      label: 'Actif immobilisé',
+      total: totalActifImmobilise,
+      items: actifImmobiliseItems.map((i) => ({
+        category: i.category,
+        label: COMPTA_CATEGORY_LABELS[i.category],
+        amount: i.amount,
       })),
-    }));
+    },
+    {
+      group: 'actif' as const,
+      label: 'Actif circulant',
+      total: totalActifCirculant,
+      items: actifCirculantItems.map((i) => ({
+        category: i.category,
+        label: COMPTA_CATEGORY_LABELS[i.category],
+        amount: i.amount,
+      })),
+    },
+    {
+      group: 'actif' as const,
+      label: 'Disponibilités',
+      total: tresorerie,
+      items: [
+        {
+          // Ligne synthétique
+          category: 'tresorerie' as any,
+          label: 'Trésorerie',
+          amount: tresorerie,
+        },
+      ],
+    },
+  ];
 
-  const assets = buildSections('actif');
-  const liabilities = buildSections('passif');
+  const capitauxPropresTotal = apports + beneficeReporte + resultatNetEquity;
+  const liabilities = [
+    {
+      group: 'passif' as const,
+      label: 'Capitaux propres',
+      total: capitauxPropresTotal,
+      items: [
+        {
+          category: 'apport_capital',
+          label: COMPTA_CATEGORY_LABELS['apport_capital'],
+          amount: apports,
+        },
+        {
+          category: 'benefice_reporte' as any,
+          label: COMPTA_CATEGORY_LABELS['benefice_reporte'],
+          amount: beneficeReporte,
+        },
+        {
+          category: 'resultat_exercice' as any,
+          label: "Résultat de l'exercice",
+          amount: resultatNetEquity,
+        },
+      ],
+    },
+    {
+      group: 'passif' as const,
+      label: 'Dettes',
+      total: totalDettes,
+      items: dettesItems.map((i) => ({
+        category: i.category,
+        label: COMPTA_CATEGORY_LABELS[i.category],
+        amount: i.amount,
+      })),
+    },
+  ];
 
   const totalAssets = assets.reduce((sum, section) => sum + section.total, 0);
-  const totalLiabilities = liabilities.reduce(
-    (sum, section) => sum + section.total,
-    0,
-  );
+  const totalLiabilities = liabilities.reduce((sum, section) => sum + section.total, 0);
 
   return {
     assets,
