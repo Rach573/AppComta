@@ -16,6 +16,14 @@ export interface CashflowSummary {
   investissement: number;
   financement: number;
   net: number;
+  encaissementsClients?: number;
+  paiementsFournisseurs?: number;
+  paiementsCharges?: number;
+  interets?: number;
+  apports?: number;
+  emprunts?: number;
+  remboursements?: number;
+  investissementsPayes?: number;
 }
 
 export type ComptaCategory =

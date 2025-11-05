@@ -43,11 +43,10 @@ const cashflowItemsExploitation = computed(() => {
 const cashflowItemsFinInv = computed(() => {
   if (!cashflow.value) return [];
   return [
-    { label: "Investissements payés", amount: cashflow.value.investissement },
+    { label: "Investissements payés", amount: -(cashflow.value.investissementsPayes ?? 0) },
     { label: "Apports en capital", amount: cashflow.value.apports ?? 0 },
     { label: "Emprunts reçus", amount: cashflow.value.emprunts ?? 0 },
     { label: "Remboursements emprunts", amount: cashflow.value.remboursements ?? 0 },
-    { label: "Total financement", amount: cashflow.value.financement },
   ];
 });
 
@@ -347,49 +346,21 @@ onMounted(() => {
       </nav>
 
       <section v-if="currentView === 'entries'" class="entries-view">
-        <section class="card form-card">
-          <h2>Nouvelle ecriture</h2>
-          <form @submit.prevent="submit">
-            <label>
-              Type d'écriture
-              <select v-model="form.category" @change="updateLabel">
-                <optgroup
-                  v-for="group in categoryGroups"
-                  :key="group.key"
-                  :label="`${group.label} (${group.group === 'actif' ? 'Actif' : 'Passif'})`"
-                >
-                  <option
-                    v-for="option in group.options"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </optgroup>
-              </select>
-            </label>
-            <label>
-              Montant (EUR)
-              <input v-model.number="form.amount" type="number" step="0.01" placeholder="0.00" />
-            </label>
-            <button type="submit" :disabled="savingEntry">
-              {{ savingEntry ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
-          </form>
-          <p v-if="entryError" class="error">{{ entryError }}</p>
-        </section>
-
-        <section class="card form-card">
-          <div class="section-header">
+        <section class="card form-card" style="grid-column: 1 / -1; max-width: 600px; justify-self: center;">
+          <h2>Nouvelle écriture (Saisie assistée)</h2>
+          
+          <div class="manual-form" style="display: none;"> 
+          </div>
+          
+          <div class="section-header" style="margin-top: 1.5rem;">
             <div>
-              <h2>Saisie automatique (par description)</h2>
-              <p class="subtitle">Tapez une description (ex: "achat machine") et un montant – la catégorie est déduite automatiquement.</p>
+              <p class="subtitle" style="margin-top: 0.5rem; text-align: center;">Choisissez un type d'opération prédéfini pour enregistrer l'écriture comptable complète.</p>
             </div>
           </div>
           <SaisieEcriture @added="() => { void fetchEntries(); void generateBalance(); void fetchIncomeStatement(); void fetchCashflow(); }" />
         </section>
 
-        <section class="card entries">
+        <section class="card entries" style="grid-column: 1 / -1;">
           <div class="entries-header" @click="toggleHistorique">
             <h2>Historique des ecritures ({{ entries.length }})</h2>
             <span class="toggle-icon">{{ historiqueExpanded ? '▼' : '▶' }}</span>
@@ -434,9 +405,6 @@ onMounted(() => {
             <p class="subtitle">Visualisation inspiree de la presentation classique Actif / Passif</p>
           </div>
           <div style="display: flex; gap: 10px;">
-            <button type="button" @click="testLogique" class="btn-test" title="Tester la logique comptable (voir console)">
-              🧪 Test
-            </button>
             <button type="button" @click="testEcoBois" class="btn-test" title="Tester l'exercice ÉcoBois (voir console)" style="background: #1a936f;">
               🌳 Test ÉcoBois
             </button>
@@ -633,12 +601,15 @@ onMounted(() => {
 }
 
 .tabs {
-  display: inline-flex;
-  align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 999px;
-  padding: 0.35rem;
+  padding: 0.35rem 1.5rem;
   box-shadow: 0 12px 30px rgba(91, 95, 151, 0.15);
+  max-width: 520px;
+  margin: 0 auto;
 }
 
 .tabs button {
@@ -668,15 +639,20 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
-.card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 18px 35px rgba(91, 95, 151, 0.15);
-  border: 1px solid rgba(91, 95, 151, 0.12);
+@media (max-width: 720px) {
+  /* Supprimer le bloc de media query si vous voulez forcer la saisie sur une seule colonne large */
 }
 
-.form-card form {
+.card {
+  display: inline-flex;
+  align-self: center;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  padding: 0.35rem;
+  box-shadow: 0 12px 30px rgba(91, 95, 151, 0.15);
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto;
   display: grid;
   gap: 1.2rem;
 }

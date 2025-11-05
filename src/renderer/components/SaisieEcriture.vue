@@ -1,10 +1,7 @@
 <template>
-  <div class="saisie">
-    <h2>Ajouter une écriture comptable</h2>
-
-
-    <div class="bloc">
-      <h3>Sélection assistée</h3>
+  <div class="saisie-content">
+    
+    <div class="form-wrapper">
       <label>
         Type prédéfini
         <select v-model="selectedKey">
@@ -15,7 +12,7 @@
       </label>
       <label>
         Montant
-        <input v-model.number="amountAuto" type="number" placeholder="0.00" />
+        <input v-model.number="amountAuto" type="number" step="0.01" placeholder="0.00" />
       </label>
       <label v-if="requiresPaymentMode">
         Mode de paiement
@@ -136,51 +133,94 @@ const soumettreAuto = async () => {
 </script>
 
 <style scoped>
-.saisie {
-  padding: 1rem;
-  max-width: 700px;
-  margin: auto;
+/* Remplacer .saisie par .saisie-content et simplifier les styles */
+.saisie-content {
+  padding: 0;
+  max-width: none;
+  margin: 0;
 }
-.bloc {
-  margin-bottom: 2rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f9f9f9;
-}
-.bloc h3 {
-  margin-top: 0;
-  color: #333;
-}
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-}
-input, select {
-  width: 100%;
-  margin-top: 0.3rem;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-button {
-  margin-top: 1rem;
-  padding: 0.7rem 1.5rem;
-  background: #3BA18B;
-  color: white;
+.form-wrapper { /* Remplacer .bloc */
+  margin-bottom: 0rem;
+  padding: 0;
   border: none;
-  border-radius: 6px;
-  cursor: pointer;
+  background: none;
+  display: grid;
+  gap: 1.2rem; /* Aligner avec le style de App.vue */
+}
+/* Le reste des styles (.erreur, .resultat, table, etc.) doit rester inchangé */
+
+/* Surcharge des styles globaux du formulaire pour la cohérence */
+.form-wrapper label {
+  display: grid;
+  gap: 0.5rem;
   font-weight: 600;
+  color: #4c1d95; /* Couleur de App.vue */
 }
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.form-wrapper input,
+.form-wrapper select {
+  padding: 0.75rem;
+  border: 1px solid rgba(91, 95, 151, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
 }
-button:not(:disabled):hover {
-  background: #2e8271;
+
+.form-wrapper button {
+  justify-self: flex-start;
+  padding: 0.75rem 1.8rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.form-wrapper button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  box-shadow: none;
+}
+
+.resultat {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #86efac;
+}
+
+.resultat h3 {
+  margin-top: 0;
+  color: #166534;
+}
+
+.resultat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.resultat th,
+.resultat td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #d1fae5;
+}
+
+.resultat th {
+  font-weight: 600;
+  background: #dcfce7;
+  color: #166534;
+}
+
 .erreur {
-  color: red;
+  color: #dc2626;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fee2e2;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
 }
 </style>

@@ -63,6 +63,7 @@ export type CashflowSummary = {
   apports: number;
   emprunts: number;
   remboursements: number;
+  investissementsPayes: number;
 };
 
 // Revenus d'exploitation (comptabilisés en cash seulement si pas de créance)
@@ -215,6 +216,7 @@ export function computeCashflow(entries: ComptaEntry[]): CashflowSummary {
       if (!tryConsume(dettesFournisseurs, amount)) {
         investissement -= amount;
       }
+      investissementsPayes += amount;
       continue;
     }
 
@@ -246,8 +248,9 @@ export function computeCashflow(entries: ComptaEntry[]): CashflowSummary {
     paiementsFournisseurs,
     paiementsCharges,
     interets,
-  apports: apportsCapital,
-  emprunts: empruntsRecus,
+    apports: apportsCapital,
+    emprunts: empruntsRecus,
     remboursements,
+    investissementsPayes,
   };
 }
