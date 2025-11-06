@@ -75,19 +75,21 @@ function formatCurrency(value: number) {
 </template>
 <style scoped>
 .section-table {
-  margin-bottom: 2rem;
-  background: #1F1F1F;
+  height: 100%; /* Permet de prendre la hauteur maximale du conteneur Flexbox */
+  margin-bottom: 0; /* Retirer la marge basse pour l'intégration Flexbox */
+  background: #ffffff; /* Blanc pour correspondre aux cartes de App.vue */
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Ombre légère et subtile */
   padding: 1.5rem;
   max-width: 400px;
+  border: 1px solid #e5e7eb; /* Bordure légère */
 }
 .section-title {
   font-weight: 600;
   font-family: 'Poppins', 'Inter', 'Manrope', Arial, sans-serif;
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  color: #F3E9DC;
+  color: #1e3a8a; /* Bleu Marine pour le titre (charges/produits/flux) */
 }
 .section-table-grid {
   display: grid;
@@ -101,25 +103,25 @@ function formatCurrency(value: number) {
   text-align: left;
   font-family: 'Poppins', 'Inter', 'Manrope', Arial, sans-serif;
   font-size: 1rem;
-  color: #F3E9DC;
+  color: #374151; /* Gris foncé pour les libellés */
 }
 .section-amount {
   text-align: right;
   font-family: 'Poppins', 'Inter', 'Manrope', Arial, sans-serif;
   font-size: 1rem;
-  color: #F3E9DC;
+  color: #374151; /* Gris foncé pour les montants */
   font-weight: 600;
 }
 .section-total .section-label {
   font-weight: bold;
-  color: #F18F01;
-  border-top: 1px solid #FFFFFF10;
+  color: #06b6d4; /* Cyan pour le total */
+  border-top: 1px solid #e5e7eb; /* Ligne de séparation claire */
   padding-top: 0.6rem;
 }
 .section-total .section-amount {
   font-weight: bold;
-  color: #F18F01;
-  border-top: 1px solid #FFFFFF10;
+  color: #06b6d4; /* Cyan pour le total */
+  border-top: 1px solid #e5e7eb;
   padding-top: 0.6rem;
 }
 </style>

@@ -111,7 +111,7 @@ export async function computeBalanceSheet(): Promise<BalanceSheetSummary> {
     const total = comptaStore
       .filter((e) => e.category === cat)
       .reduce((s, e) => s + e.amount, 0);
-    if (total !== 0) actifImmobiliseItems.push({ category: cat, amount: total });
+  actifImmobiliseItems.push({ category: cat, amount: total });
   }
   const totalActifImmobilise = actifImmobiliseItems.reduce((s, i) => s + i.amount, 0);
 
@@ -122,7 +122,7 @@ export async function computeBalanceSheet(): Promise<BalanceSheetSummary> {
     const total = comptaStore
       .filter((e) => e.category === cat)
       .reduce((s, e) => s + e.amount, 0);
-    if (total !== 0) actifCirculantItems.push({ category: cat, amount: total });
+  actifCirculantItems.push({ category: cat, amount: total });
   }
   const totalActifCirculant = actifCirculantItems.reduce((s, i) => s + i.amount, 0);
 
@@ -152,7 +152,7 @@ export async function computeBalanceSheet(): Promise<BalanceSheetSummary> {
     const total = comptaStore
       .filter((e) => e.category === cat)
       .reduce((s, e) => s + e.amount, 0);
-    if (total !== 0) dettesItems.push({ category: cat, amount: total });
+  dettesItems.push({ category: cat, amount: total });
   }
   const totalDettes = dettesItems.reduce((s, i) => s + i.amount, 0);
 

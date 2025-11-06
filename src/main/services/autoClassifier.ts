@@ -2,7 +2,7 @@ import type { AutoClassifyInput, AutoKey } from '@shared/autoClassifier';
 import type { RegisterComptaPayload } from '@shared/types/compta';
 
 export function buildAutoEntries(input: AutoClassifyInput): RegisterComptaPayload[] {
-  const { key, amount, paymentMode, interestsPart } = input;
+  const { key, amount, paymentMode, interestsPart, costOfGoodsSoldAmount } = input;
   const entries: RegisterComptaPayload[] = [];
 
   const add = (category: RegisterComptaPayload['category'], label: string, amt: number) => {
@@ -35,15 +35,28 @@ export function buildAutoEntries(input: AutoClassifyInput): RegisterComptaPayloa
       // Constitution de stock (Bilan)
       add('stock', 'Stock matières premières', amount);
       if (paymentMode === 'credit') {
+        // Achat à CRÉDIT -> Augmente le Passif
         add('dettes_fournisseurs', 'Dette fournisseur - matières', amount);
+      } else {
+        // Achat au COMPTANT -> Diminue la Trésorerie (Cashflow)
+        // Utiliser la catégorie 'paiement_fournisseurs' avec un montant NÉGATIF
+        add('paiement_fournisseurs', 'Paiement matières premières', -amount);
       }
       break;
     }
     case 'vente_meubles': {
-      // Produit (CR) + créance si pas encaissé
+      // 1) Produit (CR) + créance si pas encaissé
       add('vente', 'Vente de meubles', amount);
       if (paymentMode === 'credit') {
         add('creances_clients', 'Créance client', amount);
+      }
+      // 2) Coût des ventes (CdV) si fourni: charge + réduction stock
+      if (costOfGoodsSoldAmount && costOfGoodsSoldAmount > 0) {
+        const cost = Math.abs(costOfGoodsSoldAmount);
+        // Enregistrer la charge de consommation de matières
+        add('achat_matieres', 'Consommation matières premières (CdV)', cost);
+        // Réduire le stock d'autant (actif diminue)
+        add('stock', 'Réduction stock (CdV)', -cost);
       }
       break;
     }

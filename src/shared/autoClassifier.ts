@@ -53,6 +53,7 @@ export type AutoClassifyInput = {
   amount: number;
   paymentMode?: PaymentMode; // si applicable
   interestsPart?: number; // pour remboursement emprunt (part intérêts)
+  costOfGoodsSoldAmount?: number; // CdV pour vente_meubles (consommation de matières)
 };
 
 // --- Extension: autoClassifier par libellé libre ---

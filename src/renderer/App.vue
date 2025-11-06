@@ -1,3 +1,39 @@
+/* 1. STYLES SPÉCIFIQUES AU HERO (Logo et Titre) */
+.logo-hero {
+  height: 80px; /* Taille augmentée à 80px */
+  width: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.1)); 
+}
+.hero h1 {
+  margin: 0 0 0.25rem;
+  font-size: 2.2rem; 
+  color: #1e3a8a; /* Bleu Marine */
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.hero p {
+  margin: 0;
+  color: #4b5563; /* Gris foncé */
+  font-weight: 400;
+  font-style: italic;
+  font-size: 1.05rem; 
+  font-family: 'Inter', sans-serif;
+}
+/* 2. STYLES DES TITRES DE SECTION (Nouvelle écriture / Historique) */
+.card h2.section-title-coherence {
+    color: #1e3a8a; /* Bleu Marine pour le titre de section */
+    margin-top: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+.entries-header h2 {
+    color: #1e3a8a; 
+    margin-top: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import SaisieEcriture from './components/SaisieEcriture.vue';
@@ -324,9 +360,12 @@ onMounted(() => {
   <div class="app-shell">
     <main class="layout">
       <header class="hero">
-        <div>
-          <h1>AppCompta</h1>
-          <p>Suivez vos ecritures et visualisez votre bilan en un clin d'oeil.</p>
+        <div class="hero-title-area">
+          <img src="./assets/logoequilibro.png" alt="Logo Équili Bro'" class="logo-hero">
+          <div>
+            <h1>Équili Bro'</h1>
+            <p>Gère ton business avec ton Bro' comptable.</p>
+          </div>
         </div>
         <div
           class="hero-balance"
@@ -436,7 +475,8 @@ onMounted(() => {
                 </div>
               </div>
               <div class="grand-total actif">
-                Total de l'Actif : <strong>{{ formatCurrency(totalAssets) }}</strong>
+                <span>Total de l'Actif</span>
+                <strong>{{ formatCurrency(totalAssets) }}</strong>
               </div>
             </div>
           </div>
@@ -462,7 +502,8 @@ onMounted(() => {
                 </div>
               </div>
               <div class="grand-total passif">
-                Total du Passif : <strong>{{ formatCurrency(totalLiabilities) }}</strong>
+                <span>Total du Passif</span>
+                <strong>{{ formatCurrency(totalLiabilities) }}</strong>
               </div>
             </div>
           </div>
@@ -478,15 +519,15 @@ onMounted(() => {
         </div>
         <div v-if="incomeLoading">Chargement...</div>
         <div v-else-if="incomeError" class="error">{{ incomeError }}</div>
-        <div v-else-if="incomeStatement" class="balance-grid">
-          <div class="balance-column">
+        <div v-else-if="incomeStatement" class="results-grid">
+          <div class="results-column">
             <SectionTable
               title="Charges"
               :items="allCharges"
               :total="incomeStatement.charges.reduce((s, i) => s + i.amount, 0)"
             />
           </div>
-          <div class="balance-column">
+          <div class="results-column">
             <SectionTable
               title="Produits"
               :items="allProduits"
@@ -505,15 +546,15 @@ onMounted(() => {
         </div>
         <div v-if="cashflowLoading">Chargement...</div>
         <div v-else-if="cashflowError" class="error">{{ cashflowError }}</div>
-        <div v-else-if="cashflow" class="balance-grid">
-          <div class="balance-column">
+        <div v-else-if="cashflow" class="results-grid">
+          <div class="results-column">
             <SectionTable
               title="Exploitation"
               :items="cashflowItemsExploitation"
               :total="cashflowItemsExploitation.reduce((s, i) => s + i.amount, 0)"
             />
           </div>
-          <div class="balance-column">
+          <div class="results-column">
             <SectionTable
               title="Financement & Investissement"
               :items="cashflowItemsFinInv"
@@ -521,6 +562,20 @@ onMounted(() => {
             />
           </div>
         </div>
+/* NOUVEAU STYLE : Grille pour les résultats (CR et Cashflow) */
+.results-grid {
+  display: flex; /* Utiliser Flexbox pour la taille égale */
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: stretch; /* Assure que les colonnes ont la même hauteur */
+}
+
+.results-column {
+  flex: 1 1 45%;
+  min-width: 300px;
+  display: grid;
+  gap: 1.2rem;
+}
         <div v-if="cashflow" class="grand-total" style="margin-top:1.5rem; color:#1a936f;">
           Variation nette de trésorerie : <strong>{{ formatCurrency(cashflow.net) }}</strong>
         </div>
@@ -534,9 +589,9 @@ onMounted(() => {
 :global(body) {
   margin: 0;
   font-family: 'Inter', Arial, sans-serif;
-  background: linear-gradient(135deg, #f3e8ff 0%, #e0f2ff 50%, #f4e1ff 100%);
+  background: linear-gradient(135deg, #f0f4f8 0%, #e8edf1 100%);
   min-height: 100vh;
-  color: #1f2933;
+  color: #374151; /* Nouveau gris foncé professionnel */
 }
 
 .app-shell {
@@ -559,23 +614,41 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 20px;
   padding: 2rem 2.5rem;
-  box-shadow: 0 20px 45px rgba(124, 58, 237, 0.15);
-  border: 1px solid rgba(124, 58, 237, 0.12);
+  box-shadow: 0 10px 20px rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+.hero-title-area {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.logo-hero {
+  height: 60px;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .hero h1 {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
-  color: #4c1d95;
+  margin: 0 0 0.25rem;
+  font-size: 2.2rem;
+  color: #1e3a8a; /* Bleu Marine sur fond clair */
+  font-family: 'Montserrat', sans-serif; /* Police souhaitée pour le titre */
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .hero p {
   margin: 0;
-  color: #5b5f97;
-  font-weight: 500;
+  color: #4b5563; /* Gris foncé lisible sur fond clair */
+  font-weight: 400;
+  font-style: italic; /* Donne du caractère au slogan */
+  font-size: 1.05rem;
+  font-family: 'Inter', sans-serif; /* Police souhaitée pour le slogan */
 }
 
 .hero-balance {
@@ -589,11 +662,11 @@ onMounted(() => {
 
 .hero-balance strong {
   font-size: 1.6rem;
-  color: inherit;
+  color: #1e3a8a; /* Bleu Marine par défaut */
 }
 
 .hero-balance.positive {
-  color: #1a936f;
+  color: #059669; /* Vert Émeraude */
 }
 
 .hero-balance.negative {
@@ -604,10 +677,10 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
   padding: 0.35rem 1.5rem;
-  box-shadow: 0 12px 30px rgba(91, 95, 151, 0.15);
+  box-shadow: 0 12px 30px rgba(6, 182, 212, 0.12); /* Cyan shadow */
   max-width: 520px;
   margin: 0 auto;
 }
@@ -618,19 +691,20 @@ onMounted(() => {
   padding: 0.6rem 1.8rem;
   border-radius: 999px;
   font-weight: 600;
-  color: #5b5f97;
+  color: #1e3a8a; /* Bleu Marine */
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
 .tabs button.active {
-  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  background: linear-gradient(135deg, #06b6d4, #1e3a8a); /* Cyan -> Bleu Marine */
   color: #fff;
-  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 8px 15px rgba(6, 182, 212, 0.3);
 }
 
 .tabs button:not(.active):hover {
-  background: rgba(124, 58, 237, 0.1);
+  background: rgba(6, 182, 212, 0.1); /* Cyan hover */
+  color: #06b6d4;
 }
 
 .entries-view {
@@ -646,7 +720,7 @@ onMounted(() => {
 .card {
   display: inline-flex;
   align-self: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
   padding: 0.35rem;
   box-shadow: 0 12px 30px rgba(91, 95, 151, 0.15);
@@ -758,11 +832,11 @@ button:not(:disabled):hover {
 
 .entries .label {
   font-weight: 600;
-  color: #302b63;
+  color: #1e3a8a; /* Bleu Marine pour les libellés importants */
 }
 
 .entries .category {
-  color: #5b5f97;
+  color: #6b7280; /* Gris doux */
 }
 
 .entry-meta {
@@ -774,11 +848,11 @@ button:not(:disabled):hover {
 
 .entries .amount {
   font-weight: 600;
-  color: #302b63;
+  color: #1e3a8a; /* Bleu Marine pour les montants */
 }
 
 .entries .amount.negative {
-  color: #d64545;
+  color: #dc2626;
 }
 
 .entries .date {
@@ -793,7 +867,7 @@ button:not(:disabled):hover {
   cursor: pointer;
   user-select: none;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid rgba(124, 58, 237, 0.1);
+  border-bottom: 2px solid rgba(6, 182, 212, 0.1);
 }
 
 .entries-header:hover {
@@ -802,7 +876,7 @@ button:not(:disabled):hover {
 
 .toggle-icon {
   font-size: 1.2rem;
-  color: #7c3aed;
+  color: #06b6d4; /* Cyan pour l'icône déroulante */
   transition: transform 0.2s ease;
 }
 
@@ -851,29 +925,35 @@ button:not(:disabled):hover {
   color: #5b5f97;
 }
 
+/* Harmonisation visuelle : colonnes égales et même nombre de lignes */
 .balance-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  display: flex;
   gap: 2rem;
+  align-items: stretch;
+}
+.balance-grid {
+  display: flex; /* Utiliser Flexbox pour la taille égale */
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: stretch; /* CRITIQUE : Assure que les colonnes ont la même hauteur */
 }
 
 .balance-column {
-  display: grid;
+  flex: 1 1 45%; /* CRITIQUE : Répartition égale de l'espace horizontal */
+  min-width: 300px;
+  display: flex; /* CHANGER : Passer à flex pour contrôler l'étirement des enfants (balance-box) */
+  flex-direction: column;
   gap: 1.2rem;
 }
 
-.balance-title {
-  font-size: 1.6rem;
-  text-align: center;
-  font-weight: 700;
-}
-
-.balance-title.actif {
-  color: #d53f8c;
-}
-
-.balance-title.passif {
-  color: #4f46e5;
+.balance-box {
+  border: 2px solid rgba(91, 95, 151, 0.2);
+  border-radius: 18px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  display: grid;
+  gap: 1.5rem;
+  flex-grow: 1; /* CRITIQUE : Permet à la boîte de contenu de prendre toute la hauteur */
 }
 
 .balance-box {
@@ -918,7 +998,9 @@ button:not(:disabled):hover {
 .grand-total {
   font-size: 1.15rem;
   font-weight: 700;
-  text-align: center;
+  display: flex;
+  justify-content: space-between; /* Pousse le label à gauche et le montant à droite */
+  text-align: left; /* Assure que le texte n'est pas centré par défaut */
   padding-top: 0.75rem;
   border-top: 1px solid rgba(91, 95, 151, 0.25);
 }

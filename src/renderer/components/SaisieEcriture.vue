@@ -10,9 +10,15 @@
           </optgroup>
         </select>
       </label>
-      <label>
+                <optgroup v-for="grp in autoOptions" :label="grp.group" :key="grp.group">
+                  <option v-for="opt in grp.options" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
+                </optgroup>
         Montant
         <input v-model.number="amountAuto" type="number" step="0.01" placeholder="0.00" />
+      </label>
+      <label v-if="selectedKey === 'vente_meubles'">
+        Coût des matières premières consommées (CdV)
+        <input v-model.number="costOfGoodsSoldAmount" type="number" step="0.01" placeholder="0.00" />
       </label>
       <label v-if="requiresPaymentMode">
         Mode de paiement
@@ -28,7 +34,7 @@
       <button @click="soumettreAuto" :disabled="!selectedKey || !amountAuto">Classer automatiquement</button>
     </div>
 
-    <div v-if="resultat" class="resultat">
+            <button @click="soumettreAuto" :disabled="!selectedKey || !amountAuto">Enregistrer l'opération</button>
       <h3>{{ resultat.libelle }}</h3>
       <p>Date : {{ new Date(resultat.date).toLocaleDateString() }}</p>
       <table>
@@ -101,6 +107,7 @@ const selectedKey = ref<AutoKey | ''>('');
 const amountAuto = ref<number | null>(null);
 const paymentMode = ref<PaymentMode>('comptant');
 const interestsPart = ref<number | null>(null);
+const costOfGoodsSoldAmount = ref<number | null>(null);
 const requiresPaymentMode = computed(() => {
   const group = autoOptions.find(g => g.options.some(o => o.key === selectedKey.value));
   const opt = group?.options.find(o => o.key === selectedKey.value);
@@ -113,6 +120,10 @@ const soumettreAuto = async () => {
     if (!selectedKey.value || !amountAuto.value) {
       throw new Error('Sélection et montant requis.');
     }
+    // Validation CdV obligatoire pour vente_meubles
+    if (selectedKey.value === 'vente_meubles' && (!costOfGoodsSoldAmount.value || costOfGoodsSoldAmount.value <= 0)) {
+      throw new Error("Le coût des matières premières consommées (CdV) est obligatoire pour la vente.");
+    }
     if (!window.electronService?.compta?.auto) {
       throw new Error('Service Electron non disponible.');
     }
@@ -121,11 +132,13 @@ const soumettreAuto = async () => {
       amount: Number(amountAuto.value),
       paymentMode: requiresPaymentMode.value ? paymentMode.value : undefined,
       interestsPart: selectedKey.value === 'remboursement_emprunt_interets' && interestsPart.value ? Number(interestsPart.value) : undefined,
+      costOfGoodsSoldAmount: selectedKey.value === 'vente_meubles' && costOfGoodsSoldAmount.value != null ? Number(costOfGoodsSoldAmount.value) : undefined,
     });
     emit('added');
     selectedKey.value = '';
     amountAuto.value = null;
     interestsPart.value = null;
+    costOfGoodsSoldAmount.value = null;
   } catch (e) {
     erreur.value = (e as any)?.message ?? String(e);
   }
