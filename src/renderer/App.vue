@@ -1,3 +1,17 @@
+/* NOUVEAU : Utiliser Flexbox pour le contrôle vertical dans le bilan */
+.balance-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex-grow: 1;
+}
+.balance-section {
+  margin-bottom: 0;
+}
+.balance-section:last-of-type {
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+}
 /* 1. STYLES SPÉCIFIQUES AU HERO (Logo et Titre) */
 .logo-hero {
   height: 80px; /* Taille augmentée à 80px */
