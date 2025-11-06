@@ -1,18 +1,15 @@
 <template>
   <div class="saisie-content">
-    
     <div class="form-wrapper">
       <label>
-        Type prédéfini
+        Opération comptable (Sélection assistée)
         <select v-model="selectedKey">
           <optgroup v-for="grp in autoOptions" :label="grp.group" :key="grp.group">
             <option v-for="opt in grp.options" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
           </optgroup>
         </select>
       </label>
-                <optgroup v-for="grp in autoOptions" :label="grp.group" :key="grp.group">
-                  <option v-for="opt in grp.options" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-                </optgroup>
+      <label>
         Montant
         <input v-model.number="amountAuto" type="number" step="0.01" placeholder="0.00" />
       </label>
@@ -31,10 +28,9 @@
         Dont intérêts
         <input v-model.number="interestsPart" type="number" placeholder="0.00" />
       </label>
-      <button @click="soumettreAuto" :disabled="!selectedKey || !amountAuto">Classer automatiquement</button>
+      <button @click="soumettreAuto" :disabled="!selectedKey || !amountAuto">Enregistrer l'opération</button>
     </div>
-
-            <button @click="soumettreAuto" :disabled="!selectedKey || !amountAuto">Enregistrer l'opération</button>
+    <div v-if="resultat" class="resultat">
       <h3>{{ resultat.libelle }}</h3>
       <p>Date : {{ new Date(resultat.date).toLocaleDateString() }}</p>
       <table>
@@ -51,7 +47,6 @@
         </tbody>
       </table>
     </div>
-
     <p v-if="erreur" class="erreur">{{ erreur }}</p>
   </div>
 </template>

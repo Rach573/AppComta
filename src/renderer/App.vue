@@ -1013,10 +1013,11 @@ button:not(:disabled):hover {
   font-size: 1.15rem;
   font-weight: 700;
   display: flex;
-  justify-content: space-between; /* Pousse le label à gauche et le montant à droite */
-  text-align: left; /* Assure que le texte n'est pas centré par défaut */
+  justify-content: space-between;
+  text-align: left;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(91, 95, 151, 0.25);
+  margin-top: auto; /* Ancrage au bas du conteneur Flex */
 }
 
 .grand-total.actif {
