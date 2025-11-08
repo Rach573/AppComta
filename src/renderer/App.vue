@@ -604,7 +604,11 @@ onMounted(() => {
 }
   margin: 0;
   font-family: 'Inter', Arial, sans-serif;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e8edf1 100%);
+    /* Fond plus doux avec teintes cyan et violet, discret et moderne */
+    background:
+      radial-gradient(1000px 800px at 12% 18%, rgba(6, 182, 212, 0.10), transparent 42%),
+      radial-gradient(1000px 800px at 88% 82%, rgba(124, 58, 237, 0.10), transparent 42%),
+      linear-gradient(135deg, #e9f6fb 0%, #f5efff 100%);
   min-height: 100vh;
   color: #374151; /* Nouveau gris foncé professionnel */
 }
