@@ -44,10 +44,11 @@
  * - le total cumulé
  */
 
-defineProps<{
+const props = defineProps<{
   title: string;
   items: { label: string; amount: number }[];
   total?: number;
+  flat?: boolean; // affine le style pour un rendu plus "plat" (sans effet carte)
 }>();
 
 function formatCurrency(value: number) {
@@ -59,7 +60,7 @@ function formatCurrency(value: number) {
 }
 </script>
 <template>
-  <div class="section-table">
+  <div class="section-table" :class="{ flat: props.flat }">
     <div class="section-title">{{ title }}</div>
     <div class="section-table-grid">
       <div v-for="item in items" :key="item.label" class="section-row">
@@ -83,6 +84,12 @@ function formatCurrency(value: number) {
   padding: 1.5rem;
   max-width: 400px;
   border: 1px solid #e5e7eb; /* Bordure légère */
+}
+.section-table.flat {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
 }
 .section-title {
   font-weight: 600;

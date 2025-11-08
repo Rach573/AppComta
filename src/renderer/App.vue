@@ -35,18 +35,30 @@
   font-size: 1.05rem; 
   font-family: 'Inter', sans-serif;
 }
-/* 2. STYLES DES TITRES DE SECTION (Nouvelle écriture / Historique) */
+/* 2. STYLES DES TITRES DE SECTION (Historique aligné sur 'Opération comptable') */
 .card h2.section-title-coherence {
-    color: #1e3a8a; /* Bleu Marine pour le titre de section */
-    margin-top: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
+  color: #1e3a8a; /* Bleu Marine pour les titres de section classiques */
+  margin-top: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
 }
-.entries-header h2 {
-    color: #1e3a8a; 
-    margin-top: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
+/* Style spécifique pour "Historique des écritures" pour correspondre au label "Opération comptable" */
+.entries-header .historique-label {
+  color: #4c1d95;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: inherit;
+  margin: 0;
+}
+
+/* Forcer tous les titres à utiliser la même police que le reste de la page */
+:global(h1),
+:global(h2),
+:global(h3),
+:global(h4),
+:global(h5),
+:global(h6) {
+  font-family: inherit !important;
 }
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -381,13 +393,7 @@ onMounted(() => {
             <p>Gère ton business avec ton Bro' comptable.</p>
           </div>
         </div>
-        <div
-          class="hero-balance"
-          :class="{ negative: dashboardBalance < 0, positive: dashboardBalance >= 0 }"
-        >
-          Solde courant
-          <strong>{{ formatCurrency(dashboardBalance) }}</strong>
-        </div>
+        
       </header>
 
 
@@ -400,22 +406,17 @@ onMounted(() => {
 
       <section v-if="currentView === 'entries'" class="entries-view">
         <section class="card form-card" style="grid-column: 1 / -1; max-width: 600px; justify-self: center;">
-          <h2>Nouvelle écriture (Saisie assistée)</h2>
           
           <div class="manual-form" style="display: none;"> 
           </div>
           
-          <div class="section-header" style="margin-top: 1.5rem;">
-            <div>
-              <p class="subtitle" style="margin-top: 0.5rem; text-align: center;">Choisissez un type d'opération prédéfini pour enregistrer l'écriture comptable complète.</p>
-            </div>
-          </div>
+          <div class="section-header" style="margin-top: 1.5rem;"></div>
           <SaisieEcriture @added="() => { void fetchEntries(); void generateBalance(); void fetchIncomeStatement(); void fetchCashflow(); }" />
         </section>
 
         <section class="card entries" style="grid-column: 1 / -1;">
           <div class="entries-header" @click="toggleHistorique">
-            <h2>Historique des ecritures ({{ entries.length }})</h2>
+            <h2 class="historique-label">Historique des écritures ({{ entries.length }})</h2>
             <span class="toggle-icon">{{ historiqueExpanded ? '▼' : '▶' }}</span>
           </div>
           <div v-show="historiqueExpanded" class="entries-content">
@@ -454,8 +455,7 @@ onMounted(() => {
       <section v-else-if="currentView === 'balance'" class="card balance-card">
         <div class="section-header">
           <div>
-            <h2>Bilan comptable</h2>
-            <p class="subtitle">Visualisation inspiree de la presentation classique Actif / Passif</p>
+            
           </div>
           <div style="display: flex; gap: 10px;">
             <button type="button" @click="testEcoBois" class="btn-test" title="Tester l'exercice ÉcoBois (voir console)" style="background: #1a936f;">
@@ -525,12 +525,7 @@ onMounted(() => {
       </section>
 
       <section v-else-if="currentView === 'income'" class="card balance-card">
-        <div class="section-header">
-          <div>
-            <h2>Compte de résultat</h2>
-            <p class="subtitle">Présentation Charges / Produits avec toutes les lignes, même à zéro</p>
-          </div>
-        </div>
+        <div class="section-header"></div>
         <div v-if="incomeLoading">Chargement...</div>
         <div v-else-if="incomeError" class="error">{{ incomeError }}</div>
         <div v-else-if="incomeStatement" class="results-grid">
@@ -539,6 +534,7 @@ onMounted(() => {
               title="Charges"
               :items="allCharges"
               :total="incomeStatement.charges.reduce((s, i) => s + i.amount, 0)"
+              flat
             />
           </div>
           <div class="results-column">
@@ -546,18 +542,17 @@ onMounted(() => {
               title="Produits"
               :items="allProduits"
               :total="incomeStatement.produits.reduce((s, i) => s + i.amount, 0)"
+              flat
             />
           </div>
+        </div>
+        <div v-if="incomeStatement" class="grand-total" style="margin-top:1.5rem; color:#1a936f;">
+          Résultat du compte : <strong>{{ formatCurrency(incomeStatement.resultatNet ?? (incomeStatement.produits.reduce((s,i)=>s+i.amount,0) - incomeStatement.charges.reduce((s,i)=>s+i.amount,0))) }}</strong>
         </div>
       </section>
 
       <section v-else-if="currentView === 'cashflow'" class="card balance-card">
-        <div class="section-header">
-          <div>
-            <h2>Cashflow</h2>
-            <p class="subtitle">Présentation symétrique, toutes les lignes affichées même à zéro</p>
-          </div>
-        </div>
+        <div class="section-header"></div>
         <div v-if="cashflowLoading">Chargement...</div>
         <div v-else-if="cashflowError" class="error">{{ cashflowError }}</div>
         <div v-else-if="cashflow" class="results-grid">
@@ -566,6 +561,7 @@ onMounted(() => {
               title="Exploitation"
               :items="cashflowItemsExploitation"
               :total="cashflowItemsExploitation.reduce((s, i) => s + i.amount, 0)"
+              flat
             />
           </div>
           <div class="results-column">
@@ -573,23 +569,11 @@ onMounted(() => {
               title="Financement & Investissement"
               :items="cashflowItemsFinInv"
               :total="cashflowItemsFinInv.reduce((s, i) => s + i.amount, 0)"
+              flat
             />
           </div>
         </div>
-/* NOUVEAU STYLE : Grille pour les résultats (CR et Cashflow) */
-.results-grid {
-  display: flex; /* Utiliser Flexbox pour la taille égale */
-  gap: 2rem;
-  flex-wrap: wrap;
-  align-items: stretch; /* Assure que les colonnes ont la même hauteur */
-}
-
-.results-column {
-  flex: 1 1 45%;
-  min-width: 300px;
-  display: grid;
-  gap: 1.2rem;
-}
+            
         <div v-if="cashflow" class="grand-total" style="margin-top:1.5rem; color:#1a936f;">
           Variation nette de trésorerie : <strong>{{ formatCurrency(cashflow.net) }}</strong>
         </div>
@@ -601,6 +585,26 @@ onMounted(() => {
 
 <style scoped>
 :global(body) {
+/* Mise en page côte à côte Charges / Produits et Cashflow */
+.results-grid {
+  display: flex;
+  flex-wrap: nowrap; /* force 2 colonnes côte à côte */
+  gap: 2rem;
+  align-items: stretch;
+}
+.results-column {
+  flex: 1 1 0; /* deux colonnes qui partagent l'espace */
+  min-width: 0; /* autorise le rétrécissement sans wrap */
+  display: flex;
+}
+.results-column > * {
+  flex: 1;
+  min-width: 0;
+}
+/* Optionnel: permettre le scroll horizontal si l'écran est trop étroit */
+.results-grid {
+  overflow-x: auto;
+}
   margin: 0;
   font-family: 'Inter', Arial, sans-serif;
   background: linear-gradient(135deg, #f0f4f8 0%, #e8edf1 100%);

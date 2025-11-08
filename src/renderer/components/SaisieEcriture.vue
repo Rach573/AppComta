@@ -2,7 +2,7 @@
   <div class="saisie-content">
     <div class="form-wrapper">
       <label>
-        Opération comptable (Sélection assistée)
+        Opération comptable
         <select v-model="selectedKey">
           <optgroup v-for="grp in autoOptions" :label="grp.group" :key="grp.group">
             <option v-for="opt in grp.options" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
