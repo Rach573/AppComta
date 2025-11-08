@@ -461,9 +461,6 @@ onMounted(() => {
             <button type="button" @click="testEcoBois" class="btn-test" title="Tester l'exercice ÉcoBois (voir console)" style="background: #1a936f;">
               🌳 Test ÉcoBois
             </button>
-            <button type="button" @click="generateBalance" :disabled="balanceLoading">
-              {{ balanceLoading ? 'Generation...' : 'Actualiser le bilan' }}
-            </button>
             <button type="button" @click="cloturerExercice" title="Clôturer l'exercice et reporter le résultat">
               Clôturer l'exercice
             </button>
