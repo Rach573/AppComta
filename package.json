@@ -12,7 +12,8 @@
   "dependencies": {
     "electron-log": "^5.4.3",
     "electron-squirrel-startup": "^1.0.1",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.10.2",
